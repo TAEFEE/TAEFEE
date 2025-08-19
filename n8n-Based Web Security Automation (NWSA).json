@@ -1,0 +1,526 @@
+{
+  "name": "scan workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "url": "=https://api.cloudflare.com/client/v4/zones\n",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "per_page",
+              "value": "50"
+            },
+            {
+              "name": "page",
+              "value": "1"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer oUTy7eKiV4rJqju51bTE5ULddL7K-xvSSbYpVi7q"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -208,
+        -160
+      ],
+      "id": "cb18bfab-6801-4002-87e9-c7f9fcbaa613",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "jsCode": "const result = $json[\"body\"][\"result\"];\nreturn result.map(domain => ({\n  json: {\n    id: domain.id,\n    name: domain.name\n  }\n}));\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        96,
+        -112
+      ],
+      "id": "e834ae7f-2e83-4c76-8e7f-e65190b37cc8",
+      "name": "Code"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 40
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -512,
+        -128
+      ],
+      "id": "607c47c5-d582-4023-b823-ac99ef7e36d2",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "chatId": "787792681",
+        "text": "={{$json[\"message\"]}}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1616,
+        -192
+      ],
+      "id": "8ea3c314-adba-43d1-82f5-f21d45a934ae",
+      "name": "Send a text message",
+      "webhookId": "f7de33eb-6e2a-415c-be76-6edb5936f266",
+      "credentials": {
+        "telegramApi": {
+          "id": "iiyk0vgAEn9mtLU6",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "command": "=\"C:\\Program Files (x86)\\Nmap\\nmap.exe\" -T4 --top-ports 100 {{$json[\"subdomain\"]}}\n\n\n\n\n"
+      },
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [
+        1072,
+        -224
+      ],
+      "id": "715eb688-54d8-4554-a741-6496718dbf2c",
+      "name": "Execute Command1"
+    },
+    {
+      "parameters": {
+        "jsCode": "const now = new Date();\nconst dateStr = now.toLocaleDateString(\"ar-SA\");\nconst timeStr = now.toLocaleTimeString(\"ar-SA\");\nconst scanResult = $json[\"stdout\"] || \"No output\";\n\nconst message = `📅 التاريخ: ${dateStr}\\n⏰ الوقت: ${timeStr}\\n\\n🔍 نتيجة الفحص:\\n${scanResult}`;\nreturn [{ json: { message } }];\n\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1344,
+        -240
+      ],
+      "id": "41ef2617-b760-42d0-a849-7cb5a4ffdc1e",
+      "name": "Code1"
+    },
+    {
+      "parameters": {
+        "command": "=C:\\tools\\subfinder.exe -d {{$json[\"name\"]}} -silent\n\n"
+      },
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [
+        608,
+        -192
+      ],
+      "id": "7820894e-d4c3-45dd-ac84-38b4f458db64",
+      "name": "Execute Command2"
+    },
+    {
+      "parameters": {
+        "jsCode": "const lines = $json[\"stdout\"].split(\"\\n\").filter(l => l.trim() !== \"\");\nreturn lines.map(l => ({ json: { subdomain: l } }));\n\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        832,
+        -240
+      ],
+      "id": "35da2356-ce3f-4a97-8f04-652615303ca7",
+      "name": "Code3"
+    },
+    {
+      "parameters": {
+        "command": "=C:\\cyber-lite-portable\\tools\\nuclei\\nuclei.exe -u {{$json[\"url\"]}}\n"
+      },
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [
+        2416,
+        32
+      ],
+      "id": "df261485-d178-406f-8cf3-85ae126bccd4",
+      "name": "Execute Command3"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        304,
+        -112
+      ],
+      "id": "530a5ba5-9e66-4847-8ced-e2370c4d0636",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "chatId": "787792681",
+        "text": "=🔍 نتيجة الفحص لـ {{$json[\"url\"]}} :\n\n{{$json[\"result\"]}}\n\n",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1504,
+        208
+      ],
+      "id": "db6f7c26-71df-4d5e-9556-aaf10ce09d00",
+      "name": "Send a text message1",
+      "webhookId": "f7de33eb-6e2a-415c-be76-6edb5936f266",
+      "credentials": {
+        "telegramApi": {
+          "id": "iiyk0vgAEn9mtLU6",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "command": "=powershell -Command \"& 'C:\\Program Files (x86)\\Nmap\\nmap.exe' -T4 -p 80,443 afaaqwetaan.com engdaykau.com nufuoth.com aviarab.com sarandeeb.com\"\n\n\n\n\n\n\n\n\n"
+      },
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [
+        1040,
+        224
+      ],
+      "id": "ef1c1f5f-671b-4d72-98e9-359885bebe82",
+      "name": "Execute Command",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{\n  url: $json.url,                        // يطبع الدومين\n  result: $json.stdout || $json.stderr   // يطبع النتيجة (سواء نجاح أو خطأ)\n}]\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1280,
+        208
+      ],
+      "id": "333e10e0-e32b-452d-8d1a-e1f6dc8d3744",
+      "name": "Code2"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "url",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        144,
+        208
+      ],
+      "id": "192b47bb-45d2-4086-8bea-8352f94ab1cd",
+      "name": "Split Out"
+    },
+    {
+      "parameters": {
+        "url": "=https://{{$json[\"domain\"]}}\n\n",
+        "options": {
+          "allowUnauthorizedCerts": true
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        592,
+        192
+      ],
+      "id": "680143ba-215c-44d0-8134-3e14b9ad7df4",
+      "name": "HTTP Request1"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "9af0dd1d-cc1b-4b0f-95ea-9befc97d093c",
+              "leftValue": "={{$json[\"statusCode\"]}}",
+              "rightValue": 200,
+              "operator": {
+                "type": "number",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        816,
+        208
+      ],
+      "id": "872696a8-a5c7-4eeb-acde-181b98267381",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "jsCode": "return items.map(item => {\n  let url = item.json.url;\n  url = url.replace(/^https?:\\/\\//, \"\"); // يشيل https:// أو http://\n  url = url.replace(/\\/.*$/, \"\"); // يشيل أي مسارات بعد الدومين\n  return { json: { domain: url } };\n});\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        368,
+        192
+      ],
+      "id": "e0446417-204f-413b-bd0d-0d5e03f69ca4",
+      "name": "Code4"
+    },
+    {
+      "parameters": {
+        "jsCode": "return [\n  { json: { url: \"afaaqwetaan.com\" } },\n  { json: { url: \"engdaykau.com\" } },\n  { json: { url: \"nufuoth.com\" } },\n  { json: { url: \"aviarab.com\" } },\n  { json: { url: \"sarandeeb.com\" } }\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -128,
+        192
+      ],
+      "id": "361a978f-9a11-44b7-9217-c46b8b75537c",
+      "name": "Code5"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Code5",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute Command1": {
+      "main": [
+        [
+          {
+            "node": "Code1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code1": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute Command2": {
+      "main": [
+        [
+          {
+            "node": "Code3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code3": {
+      "main": [
+        [
+          {
+            "node": "Execute Command1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute Command3": {
+      "main": [
+        []
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [
+          {
+            "node": "Execute Command2",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute Command": {
+      "main": [
+        [
+          {
+            "node": "Code2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code2": {
+      "main": [
+        [
+          {
+            "node": "Send a text message1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out": {
+      "main": [
+        [
+          {
+            "node": "Code4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request1": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Execute Command",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Execute Command",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code4": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code5": {
+      "main": [
+        [
+          {
+            "node": "Split Out",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "b5e71acc-1f96-434e-966f-7a5297b48e59",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "071e4dc30d4a565d1105aae5dadc1ead1bf8db7993a655053a1bae403353ab07"
+  },
+  "id": "5WDLZk5bEpdxdJs5",
+  "tags": []
+}
